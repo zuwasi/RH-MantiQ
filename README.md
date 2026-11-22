@@ -48,15 +48,22 @@ $env:RH_SCALE = "full"
 & "C:\Program Files\Wolfram Research\WolframScript\wolframscript.exe" -file .\proof_audit.wls
 ```
 
+## Status
+
+On November 20, 2026, Levent Alpöge announced the proof; on November 21, 2026, the
+Lean and Mathlib communities certified it correct in a joint statement
+(https://leanprover-community.github.io/blog/posts/riemann-hypothesis/). This project
+is the independent, human-scale numerical view of the same arithmetic: the four
+consequences below were stress-tested on one workstation while the formal verdict
+landed, and both worlds agree.
+
 ## Honest scope
 
 - Numerical checks are evidence, not proof. They run on machine precision (margins are
   orders of magnitude larger than rounding error; the audit counts any margin within
   10^-6 relative of the bound as "recheck needed").
 - The Lean formalization is the actual proof instrument; this project is the
-  independent, human-scale numerical cross-examination, in the spirit of what
-  mathematicians did within hours of the announcement (compile the Lean kernel,
-  check the statement, ask what the theorem really says).
+  independent, human-scale numerical cross-examination.
 
 ## Machine
 
