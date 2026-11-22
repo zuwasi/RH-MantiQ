@@ -1,0 +1,11 @@
+Get["C:/Users/danie/RH-MantiQ/src/RHVerification.wl"];
+r = LagariasCheck[10^5];
+Print["lagarias: ", r["violations"], " violations, ", N[r["elapsedSeconds"], 4], "s, maxRatio ", N[r["maxRatio"], 6]];
+Print["tightest n: ", r["tightest"][[-1]]["n"], " ratio ", N[r["tightest"][[-1]]["ratio"], 6]];
+z = ZerosOnLineCheck[1000];
+Print["zeros: ", z["signChangeFailures"], " sign failures up to T=", N[z["tmax"], 8], ", ", N[z["elapsedSeconds"], 4], "s"];
+p = PsiReconstruction[200, 50];
+Print["psi maxAbsErr: ", N[p["maxAbsError"], 6]];
+l = LeastPrimeAPCheck[50];
+Print["AP: ", l["classesChecked"], " classes, ", l["grhViolations"], " violations, worstExcess ", l["worstExcessOverBound"]];
+Print["SMOKE OK"];

@@ -1,0 +1,17 @@
+PASS: zeta first zero ordinate == 14.13472514173469
+PASS: HarmonicNumber[100] == 5.187377517639621
+PASS: sigma(360) == 1170
+PASS: sigma(12) == 28 (the tightest Lagarias n)
+PASS: Mangoldt sieve matches built-in MangoldtLambda on 1..500
+PASS: Lagarias margin at n=1 is exactly 0 (equality case)
+PASS: n=12 is among the tightest cases with ratio ~0.988636
+PASS: Big Lagarias run reports zero violations
+PASS: Big Lagarias run covers the full range
+PASS: N(T) formula agrees with exact count to <0.1%
+PASS: psi reconstruction error decreases with more zeros
+PASS: psi(100) matches known value 94.0453112293574
+PASS: least-prime-in-AP entries reproduced by independent scan
+PASS: no least prime exceeds the GRH bound 2 q^2 log^2 q
+
+AUDIT SUMMARY: 14 passed, 0 failed, 0 warnings
+AUDIT COMPLETE

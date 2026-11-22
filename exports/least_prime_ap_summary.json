@@ -1,0 +1,8 @@
+{
+	"qmax":1000,
+	"classesChecked":304191,
+	"grhViolations":0,
+	"worstExcessOverBound":-0.8436241113456111,
+	"maxLeastPrime":70783,
+	"elapsedSeconds":8.6420675
+}

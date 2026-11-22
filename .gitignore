@@ -1,0 +1,7 @@
+# Build artifacts and scratch, not part of the public package
+video_demo/
+assets/
+debug_*.wls
+prof_*.wls
+fix_ap_csv.wls
+*.nb

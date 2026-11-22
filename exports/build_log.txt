@@ -1,0 +1,6 @@
+SCALE: full  config: <|lagariasN -> 100000000, zeroK -> 20000, psiX -> 2000, psiK -> 1000, apQ -> 1000|>
+
+Export::jsonstrictencoding: Expression Missing cannot be exported as JSON.
+Machine: 15.0.1 for Microsoft Windows (64-bit) (July 2, 2026) x 24 cores
+
+=== Lagarias criterion up to n = 100000000 ===
