@@ -57,6 +57,9 @@ is the independent, human-scale numerical view of the same arithmetic: the four
 consequences below were stress-tested on one workstation while the formal verdict
 landed, and both worlds agree.
 
+Demo video (3 minutes, all chapters timestamped):
+https://www.youtube.com/watch?v=WwcqxcO8xRU
+
 ## Honest scope
 
 - Numerical checks are evidence, not proof. They run on machine precision (margins are
