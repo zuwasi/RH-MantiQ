@@ -1,0 +1,13 @@
+{
+	"kmax":200.000000000000,
+	"kzeros":20000.0000000000,
+	"workingPrecision":140.000000000000,
+	"samplePoints":8000.00000000000,
+	"lambda1":0.0230957089661210,
+	"lambda1ClosedForm":0.0230957089661210,
+	"nonPositiveCount":0,
+	"minConstant":0.0230957089661210,
+	"maxRelativeDiscrepancy":6.709158880359778e-3,
+	"discrepancyAtN":100.000000000000,
+	"elapsedSeconds":37.4069583
+}

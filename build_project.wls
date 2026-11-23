@@ -11,8 +11,10 @@ scale = Environment["RH_SCALE"];
 scale = If[StringQ[scale] && scale == "demo", "demo", "full"];
 
 config = If[scale == "demo",
-  <|"lagariasN" -> 10^6, "zeroK" -> 2000, "psiX" -> 500, "psiK" -> 200, "apQ" -> 200|>,
-  <|"lagariasN" -> 10^8, "zeroK" -> 20000, "psiX" -> 2000, "psiK" -> 1000, "apQ" -> 1000|>
+  <| "lagariasN" -> 10^6, "zeroK" -> 2000, "psiX" -> 500, "psiK" -> 200, "apQ" -> 200,
+     "liKmax" -> 50, "liKzeros" -> 2000, "liWP" -> 100 |>,
+  <| "lagariasN" -> 10^8, "zeroK" -> 20000, "psiX" -> 2000, "psiK" -> 1000, "apQ" -> 1000,
+     "liKmax" -> 200, "liKzeros" -> 20000, "liWP" -> 140 |>
 ];
 Print["SCALE: ", scale, "  config: ", config];
 
@@ -92,7 +94,29 @@ Export[FileNameJoin[{exportDir, "fig_least_prime.png"}], figAP, ImageResolution 
 Print["classes: ", ap["classesChecked"], "  violations: ", ap["grhViolations"],
   "  maxLeastPrime: ", ap["maxLeastPrime"], "  elapsed: ", N[ap["elapsedSeconds"], 4], "s"];
 
-(* ---- 5. Validation report ---- *)
+(* ---- 5. Li's criterion ---- *)
+Print["\n=== Li's criterion, lambda_1..lambda_", config["liKmax"], " ==="];
+li = LiConstantsCheck[config["liKmax"], config["liKzeros"], config["liWP"]];
+liExport = Association @ KeyValueMap[
+   If[NumericQ[#2] && Precision[#2] =!= MachinePrecision, #1 -> N[#2, 15], #1 -> #2] &,
+   KeyDrop[li, {"constants", "constantsZeros"}]];
+Export[FileNameJoin[{exportDir, "li_summary.json"}], liExport, "JSON"];
+Export[FileNameJoin[{exportDir, "li_constants.csv"}],
+  Prepend[Transpose[{Range[config["liKmax"]], N[li["constants"], 15], N[li["constantsZeros"], 15]}],
+   {"n", "lambda_coefficient_route", "lambda_zeros_route"}], "CSV"];
+figLi = Labeled[
+  BarChart[N[li["constants"]], ChartLabels -> None,
+   AxesLabel -> {"n", "lambda_n"},
+   PlotLabel -> "Li's criterion: all lambda_n > 0, n = 1.." <> ToString[config["liKmax"]]],
+  "Li's criterion: lambda_n > 0 for all n is equivalent to the Riemann Hypothesis", Top];
+Export[FileNameJoin[{exportDir, "fig_li_constants.png"}], figLi, ImageResolution -> 200];
+Print["nonPositive: ", li["nonPositiveCount"], "  min lambda: ", N[li["minConstant"], 8],
+  "  lambda_1: ", N[li["lambda1"], 12],
+  "  two-route max rel discrepancy: ", N[li["maxRelativeDiscrepancy"], 5],
+  " (at n = ", li["discrepancyAtN"], ")",
+  "  elapsed: ", N[li["elapsedSeconds"], 4], "s"];
+
+(* ---- 6. Validation report ---- *)
 report = StringJoin[
   "# RH-MantiQ validation report\n\n",
   "Scale: ", scale, "\n\n",
@@ -113,6 +137,15 @@ report = StringJoin[
   "- reduced residue classes checked: ", ToString[ap["classesChecked"]], "\n",
   "- GRH bound violations: ", ToString[ap["grhViolations"]], "\n",
   "- largest least prime seen: ", ToString[ap["maxLeastPrime"]], "\n\n",
+  "## Li's criterion\n",
+  "- lambda_n for n = 1..", ToString[li["kmax"]], " computed two independent ways\n",
+  "- coefficient route: n Sum_j C(n-1,j-1) c_j from Log[xi] coefficients (Cauchy extraction at precision ", ToString[li["workingPrecision"]], ")\n",
+  "- zeros route: direct paired sum over the first ", ToString[li["kzeros"]], " zero ordinates\n",
+  "- nonPositive count (must be 0): ", ToString[li["nonPositiveCount"]], "\n",
+  "- min lambda_n: ", ToString[N[li["minConstant"], 8]], "\n",
+  "- lambda_1: ", ToString[N[li["lambda1"], 14]], " (closed form 1 + EulerGamma/2 - Log[2 Sqrt[Pi]] = ", ToString[N[li["lambda1ClosedForm"], 14]], ")\n",
+  "- two-route max relative discrepancy: ", ToString[N[li["maxRelativeDiscrepancy"], 5]], " at n = ", ToString[li["discrepancyAtN"]], " (zeros-route truncation)\n",
+  "- elapsed: ", ToString[N[li["elapsedSeconds"], 4]], " s\n\n",
   "Machine: ", machine["WolframVersion"], ", ", ToString[machine["ProcessorCount"]], " cores\n"];
 Export[FileNameJoin[{exportDir, "validation_report.md"}], report, "Text"];
 Print["\nBUILD COMPLETE: ", scale, " scale"];

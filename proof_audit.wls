@@ -78,6 +78,46 @@ If[FileExistsQ[apFile],
   excess = Max[apData[[All, 3]] - apData[[All, 4]]];
   audit["no least prime exceeds the GRH bound 2 q^2 log^2 q", excess < 0, excess]];
 
+(* 9. Li's criterion: independent closed-form coefficients vs the package's Cauchy extraction.
+   The audit rebuilds the coefficients of Log[xi(1+u)] itself from closed-form series:
+   log((1+u)/2) - ((1+u)/2) Log[Pi] + Log[Gamma(1/2+u/2)] + Log[u Zeta(1+u)],
+   where Log[Gamma(1/2+u/2)] coefficients follow from polygamma values at 1/2 and
+   Log[u Zeta(1+u)] coefficients follow from the Stieltjes constants by series composition. *)
+wpAud = 80; KAud = 33;
+cA = XiLogCoefficients[KAud, wpAud];
+c1 = ConstantArray[0, KAud];
+c1[[1]] = N[1 - Log[Pi]/2, wpAud];
+For[j = 2, j <= KAud, j++, c1[[j]] = N[(-1)^(j + 1)/j, wpAud]];
+c2 = ConstantArray[0, KAud];
+c2[[1]] = N[-EulerGamma/2 - Log[2], wpAud];
+For[k = 2, k <= KAud, k++, c2[[k]] = N[(-1)^k (2^k - 1) Zeta[k]/(k 2^k), wpAud]];
+w = ConstantArray[0, KAud];
+For[m = 1, m <= KAud, m++, w[[m]] = N[(-1)^(m - 1) StieltjesGamma[m - 1]/(m - 1)!, wpAud]];
+c3 = ConstantArray[0, KAud];
+For[j = 1, j <= KAud, j++,
+  c3[[j]] = w[[j]];
+  For[m = 1, m <= j - 1, m++, c3[[j]] -= (m/j) c3[[m]] w[[j - m]]]];
+cClosedAud = c1 + c2 + c3;
+maxRelC = Max[Table[Abs[cA[[j]] - cClosedAud[[j]]]/Abs[cA[[j]]], {j, KAud}]];
+audit["Li coefficients: closed-form pieces match Cauchy extraction (j<=33) to 1e-9",
+  maxRelC < 10^-9, maxRelC];
+
+(* 10. Li's criterion: constants, positivity, two-route agreement *)
+li = LiConstantsCheck[50, 2000, 100];
+audit["Li lambda_1 == 1 + gamma/2 - Log[2 Sqrt[Pi]] (closed form)",
+  Abs[li["constants"][[1]] - (1 + EulerGamma/2 - Log[2 Sqrt[Pi]])] < 10^-30, li["constants"][[1]]];
+audit["Li's criterion: all 50 constants strictly positive (audit scale)",
+  li["nonPositiveCount"] == 0, li["nonPositiveCount"]];
+audit["Li constants: coefficient route and zeros route agree within 5%",
+  li["maxRelativeDiscrepancy"] < 0.05, {li["maxRelativeDiscrepancy"], li["discrepancyAtN"]}];
+
+(* 11. Li's criterion at scale from exports *)
+liFile = FileNameJoin[{exportDir, "li_summary.json"}];
+If[FileExistsQ[liFile],
+  liBig = Association @@ Import[liFile, "JSON"];
+  audit["Big Li run reports zero non-positive constants", liBig["nonPositiveCount"] == 0, liBig["nonPositiveCount"]],
+  warn["li_summary.json missing", "run build_project.wls first"]];
+
 log[""];
 log["AUDIT SUMMARY: " <> ToString[passed] <> " passed, " <> ToString[failed] <> " failed, " <> ToString[warnings] <> " warnings"];
 Export[FileNameJoin[{exportDir, "audit_report.txt"}], StringJoin[Riffle[lines, "\n"]], "Text"];

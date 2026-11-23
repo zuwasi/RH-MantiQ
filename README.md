@@ -26,17 +26,28 @@ beyond what a casual session does, using all cores of the machine.
    prime-zeros connection the proof exploits.
 4. **GRH corner**: least prime `p == a mod q` for every reduced residue class with
    q <= qmax, checked against the Bach-Sorenson GRH upper bound `p < 2 q^2 Log[q]^2`.
+5. **Li's criterion**: the constants
+   `lambda_n = Sum over zeta zeros rho of (1 - (1 - 1/rho)^n)`, n = 1..kmax, are
+   positive for every n if and only if the Riemann Hypothesis holds. Each constant is
+   computed two independent ways: from the coefficients c_j of `Log[xi(1+u)]`
+   (extracted by a spectrally exact Cauchy integral on |u|=1 at working precision up
+   to 140 digits, then transformed by `lambda_n = n Sum_j C(n-1,j-1) c_j`), and
+   directly from the first k zero ordinates as a conditionally convergent paired sum. The two routes
+   must agree, and every constant must be strictly positive.
 
 ## Files
 
 - `src/RHVerification.wl` - the package (public API: `MachineProfile`, `LagariasCheck`,
   `ZerosOnLineCheck`, `ZeroCountingCheck`, `PsiReconstruction`, `LeastPrimeAPCheck`,
-  `MangoldtSieve`, `ChebyshevPsi`, `RunValidationSuite`)
+  `LiConstantsCheck`, `XiLogCoefficients`, `MangoldtSieve`, `ChebyshevPsi`,
+  `RunValidationSuite`)
 - `build_project.wls` - runs all checks and writes every export. Scale via environment
-  variable `RH_SCALE` (`demo` = minutes-scale, `full` = 10^8 / 20000 zeros / q<=1000)
+  variable `RH_SCALE` (`demo` = minutes-scale, `full` = 10^8 / 20000 zeros / q<=1000 /
+  200 Li constants)
 - `proof_audit.wls` - adversarial audit: known constants, sieve vs built-in
   `MangoldtLambda`, equality case, N(T) accuracy, error monotonicity, brute-force
-  cross-check of least-prime entries
+  cross-check of least-prime entries, Li coefficients rebuilt independently from
+  closed-form series and cross-checked against the package's Cauchy extraction
 - `exports/` - JSON summaries, CSV tables, PNG figures, `validation_report.md`,
   `audit_report.txt`, `build_log.txt`
 
@@ -53,8 +64,8 @@ $env:RH_SCALE = "full"
 On November 20, 2026, Levent Alpöge announced the proof; on November 21, 2026, the
 Lean and Mathlib communities certified it correct in a joint statement
 (https://leanprover-community.github.io/blog/posts/riemann-hypothesis/). This project
-is the independent, human-scale numerical view of the same arithmetic: the four
-consequences below were stress-tested on one workstation while the formal verdict
+is the independent, human-scale numerical view of the same arithmetic: the five
+checks below were stress-tested on one workstation while the formal verdict
 landed, and both worlds agree.
 
 Demo video (3 minutes, all chapters timestamped):

@@ -8,6 +8,8 @@ PsiReconstruction::usage = "PsiReconstruction[xmax, kzeros] reconstructs Chebysh
 LeastPrimeAPCheck::usage = "LeastPrimeAPCheck[qmax] finds the least prime p == a mod q for every reduced residue class with q <= qmax and tests the GRH upper bound p < 2 q^2 Log[q]^2 (Bach-Sorenson). Returns violations, worst gap, and the full table.";
 MangoldtSieve::usage = "MangoldtSieve[n] returns the von Mangoldt values Lambda(1..n) by sieve.";
 ChebyshevPsi::usage = "ChebyshevPsi[n] returns psi(x) = sum Lambda(k) for k <= n, from the sieve.";
+XiLogCoefficients::usage = "XiLogCoefficients[kmax, wp] returns the first kmax coefficients c_j of Log[xi(1+u)] about u=0, where xi(s) = 1/2 s(s-1) Pi^(-s/2) Gamma(s/2) Zeta(s). Extracted by a spectrally exact Cauchy (trapezoid) integral on |u|=1, safely inside the domain of analyticity (the nearest singularity is the first nontrivial zero at distance 14.13), at working precision wp.";
+LiConstantsCheck::usage = "LiConstantsCheck[kmax, kzeros, wp] verifies Li's criterion: the constants lambda_n = Sum over zeta zeros rho of (1 - (1 - 1/rho)^n), n = 1..kmax, are positive for every n if and only if the Riemann Hypothesis holds. Each constant is computed two independent ways: from the Log[xi] coefficients via lambda_n = n Sum_j C(n-1,j-1) c_j (Cauchy-extracted at working precision wp), and directly from the first kzeros zero ordinates. Returns both routes, positivity count, minimum constant, maximum two-route relative discrepancy, and timing.";
 RunValidationSuite::usage = "RunValidationSuite[] runs every check at moderate scale and returns one Association of results.";
 HarmonicVector::usage = "HarmonicVector[n] returns H_1..H_n: exact for n <= 100, asymptotic expansion beyond (error < 4*^-15).";
 
@@ -170,6 +172,66 @@ LeastPrimeAPCheck[qmax_] := Module[
   |>
 ];
 
+(* Coefficients of Log[xi(1+u)] about u = 0 by the spectrally exact trapezoid
+   (Cauchy) integral c_j = (1/2Pi) Integral_0^2Pi Log[xi(1+R e^(it))] e^(-i j t) dt.
+   R = 1 keeps the sample circle well away from the nearest singularity of
+   Log[xi(1+u)] (the first nontrivial zeta zero at distance 14.13). The
+   half-integer grid avoids the removable point u = -1 (s = 0). *)
+xiLogCoeffsCauchy[kmax_, wp_] := Module[
+  {M, theta, uu, xiCirc, L, c},
+  M = Max[4096, 40 kmax];
+  theta = N[Table[2 Pi (m + 1/2)/M, {m, 0, M - 1}], wp];
+  uu = Exp[I theta];
+  xiCirc[s_] := 1/2 s (s - 1) Pi^(-s/2) Gamma[s/2] Zeta[s];
+  L = Table[Log[xiCirc[1 + z]], {z, uu}];
+  c = Table[Re[Total[L*Map[#^(-j) &, uu]]]/M, {j, kmax}];
+  <|"coeffs" -> c, "samplePoints" -> M, "workingPrecision" -> wp|>
+];
+
+LiConstantsCheck[kmax_, kzeros_, wp_: 100] := Module[
+  {t0, cc, M, c, lam, gam, q, v, lamZ, nCmp, maxRel, nRel, nonPos, minLam, elapsed},
+  t0 = AbsoluteTime[];
+  cc = xiLogCoeffsCauchy[kmax, wp];
+  M = cc["samplePoints"];
+  c = cc["coeffs"];
+  (* lambda_n = n Sum_{j=1..n} C(n-1, j-1) c_j, from
+     lambda_n = d^n/ds^n [s^(n-1) Log[xi(s)]] / (n-1)! at s = 1 *)
+  lam = Table[N[n, wp]*Total[Table[c[[j]]*Binomial[n - 1, j - 1], {j, 1, n}]], {n, kmax}];
+  (* zeros route: lambda_n = 2 Re Sum_{gamma > 0} (1 - (1 - 1/(1/2 + i gamma))^n),
+     summed symmetrically over the first kzeros paired ordinates. Note |1 - 1/rho| = 1
+     exactly, so the sum converges conditionally by phase oscillation; the truncation
+     error shrinks slowly with kzeros and is reported via maxRelativeDiscrepancy. *)
+  gam = ZeroOrdinates[kzeros];
+  q = 1 - 1/(1/2 + I gam);
+  v = ConstantArray[1., Length[q]];
+  lamZ = ConstantArray[0., kmax];
+  Do[v = v*q; lamZ[[n]] = 2 (Length[q] - Re[Total[v]]), {n, kmax}];
+  (* two-route agreement; zeros-route truncation grows with n, so compare n <= 100 *)
+  nCmp = Min[kmax, 100];
+  maxRel = Max[Table[Abs[lam[[n]] - lamZ[[n]]]/Abs[lamZ[[n]]], {n, nCmp}]];
+  nRel = Position[Table[Abs[lam[[n]] - lamZ[[n]]]/Abs[lamZ[[n]]], {n, nCmp}], maxRel, 1][[1, 1]];
+  nonPos = Count[lam, x_ /; x <= 0];
+  minLam = Min[lam];
+  elapsed = AbsoluteTime[] - t0;
+  <|
+    "kmax" -> kmax,
+    "kzeros" -> kzeros,
+    "workingPrecision" -> wp,
+    "samplePoints" -> M,
+    "constants" -> lam,
+    "constantsZeros" -> lamZ,
+    "lambda1" -> lam[[1]],
+    "lambda1ClosedForm" -> 1 + EulerGamma/2 - Log[2 Sqrt[Pi]],
+    "nonPositiveCount" -> nonPos,
+    "minConstant" -> minLam,
+    "maxRelativeDiscrepancy" -> maxRel,
+    "discrepancyAtN" -> nRel,
+    "elapsedSeconds" -> elapsed
+  |>
+];
+
+XiLogCoefficients[kmax_, wp_: 100] := xiLogCoeffsCauchy[kmax, wp]["coeffs"];
+
 RunValidationSuite[] := Module[{res},
   res = <||>;
   res["machine"] = MachineProfile[];
@@ -178,6 +240,7 @@ RunValidationSuite[] := Module[{res},
   res["zeroCounting10k"] = ZeroCountingCheck[10000];
   res["psiReconstruction"] = PsiReconstruction[1000, 200];
   res["leastPrimeAP200"] = LeastPrimeAPCheck[200];
+  res["liConstants50"] = LiConstantsCheck[50, 2000, 100];
   res
 ];
 
